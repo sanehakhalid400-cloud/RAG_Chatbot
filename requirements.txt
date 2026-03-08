@@ -13,6 +13,7 @@ pypdf
 requests
 
 # Embeddings stack (compatible pins)
+torch==2.2.2
 transformers==4.39.3
 tokenizers==0.15.2
 accelerate==0.28.0
