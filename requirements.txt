@@ -1,21 +1,22 @@
-streamlit
-python-dotenv
+# Core app
+streamlit==1.26.0
+python-dotenv==1.0.1
 
-langchain-groq
-langchain-core
-langchain-community
-langchain-text-splitters
-langchain-chroma==0.1.4
+# LangChain stack (compatible pins)
+langchain-groq==0.3.1
+langchain-core==0.2.20
+langchain-community==0.2.20
+langchain-chroma==0.2.2
 
 chromadb==0.4.24
 numpy==1.26.4
-pypdf
-requests
+pypdf==3.20.0
+requests==2.31.0
 
-# Embeddings stack (compatible pins)
+# Embeddings stack
 torch==2.2.2
 transformers==4.39.3
 tokenizers==0.15.2
 accelerate==0.28.0
 sentence-transformers==2.7.0
-langchain-huggingface
+langchain-huggingface==0.2.7
