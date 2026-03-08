@@ -5,11 +5,10 @@ from dotenv import load_dotenv
 
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
+from langchain_core.chat_history import InMemoryChatMessageHistory
 
 # ── ENV & PAGE SETUP ───────────────────────────────────────────────
 def setup_env_and_page():
@@ -71,11 +70,13 @@ def upload_pdfs():
         tmp.write(pdf.getvalue())
         tmp.close()
         tmp_paths.append(tmp.name)
-        loader = PyPDFLoader(tmp.name)
-        docs = loader.load()
-        for d in docs:
-            d.metadata["source_file"] = pdf.name
-        all_docs.extend(docs)
+        from pypdf import PdfReader
+        reader = PdfReader(tmp.name)
+        for i, page in enumerate(reader.pages):
+            all_docs.append({
+                "page_content": page.extract_text(),
+                "metadata": {"source_file": pdf.name, "page": i+1}
+            })
     st.success(f"✅ Loaded {len(all_docs)} pages from {len(uploaded_files)} PDFs 📖")
     for p in tmp_paths:
         try:
@@ -132,14 +133,14 @@ def get_history(session_id):
     if "chat_history_store" not in st.session_state:
         st.session_state.chat_history_store = {}
     if session_id not in st.session_state.chat_history_store:
-        st.session_state.chat_history_store[session_id] = ChatMessageHistory()
+        st.session_state.chat_history_store[session_id] = InMemoryChatMessageHistory()
     return st.session_state.chat_history_store[session_id]
 
 # ── JOIN DOCUMENTS ───────────────────────────────────────────────
 def join_docs(docs, max_chars=7000):
     chunks, total = [], 0
     for d in docs:
-        piece = d.page_content
+        piece = d["page_content"]
         if total + len(piece) > max_chars:
             break
         chunks.append(piece)
@@ -151,7 +152,7 @@ def run_chat():
     session_id = st.text_input("🆔 Session ID", value="default")
     user_q = st.chat_input("💬 Ask a question about your PDFs...")
     history = get_history(session_id)
-    for msg in history.messages:
+    for msg in getattr(history, "messages", []):
         if msg.type == "human":
             st.chat_message("user").write(msg.content)
         else:
@@ -160,7 +161,7 @@ def run_chat():
     if user_q:
         with st.spinner("🤖 AI is generating your answer..."):
             rewrite_msgs = contextualize_q_prompt.format_messages(
-                chat_history=history.messages,
+                chat_history=getattr(history, "messages", []),
                 input=user_q
             )
             standalone_q = llm.invoke(rewrite_msgs).content.strip()
@@ -170,7 +171,7 @@ def run_chat():
             else:
                 context_str = join_docs(docs)
                 qa_msgs = qa_prompt.format_messages(
-                    chat_history=history.messages,
+                    chat_history=getattr(history, "messages", []),
                     input=user_q,
                     context=context_str
                 )
@@ -178,16 +179,18 @@ def run_chat():
         st.chat_message("user").write(f"👤 {user_q}")
         st.chat_message("assistant").write(f"🤖 {answer}")
         if docs:
-            sources = set(d.metadata.get("source_file", "Unknown") for d in docs)
+            sources = set(d.get("metadata", {}).get("source_file", "Unknown") for d in docs)
             st.markdown(f"📚 **Sources:** {', '.join(sources)}")
-        history.add_user_message(user_q)
-        history.add_ai_message(answer)
+        # Update chat history
+        if hasattr(history, "add_user_message") and hasattr(history, "add_ai_message"):
+            history.add_user_message(user_q)
+            history.add_ai_message(answer)
         with st.expander("🧪 Debug Retrieval & Standalone Query"):
             st.write("📝 Standalone Query:")
             st.code(standalone_q)
             st.write(f"🔍 Retrieved {len(docs)} chunk(s)")
             for i, d in enumerate(docs, 1):
-                st.markdown(f"{i}. 📄 {d.metadata.get('source_file', 'Unknown')} (p{d.metadata.get('page','?')})")
-                st.write(d.page_content[:400] + "...")
+                st.markdown(f"{i}. 📄 {d.get('metadata', {}).get('source_file','Unknown')} (p{d.get('metadata', {}).get('page','?')})")
+                st.write(d["page_content"][:400] + "...")
 
 run_chat()
