@@ -2,10 +2,9 @@
 streamlit==1.26.0
 python-dotenv==1.0.1
 
-# LangChain stack (aligned versions)
+# LangChain stack
 langchain-groq==0.3.1
 langchain-core==0.3.48
-langchain-community==0.3.48
 langchain-chroma==0.3.4
 
 chromadb==0.4.24
