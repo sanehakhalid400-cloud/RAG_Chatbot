@@ -5,7 +5,7 @@ python-dotenv==1.0.1
 # LangChain stack (Python 3.12 compatible)
 langchain-groq==0.3.1
 langchain-core==0.3.47
-langchain-chroma==0.4.1
+langchain-chroma==0.1.4
 
 chromadb==0.4.24
 numpy==1.26.4
