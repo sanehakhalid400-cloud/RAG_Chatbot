@@ -2,11 +2,11 @@
 streamlit==1.26.0
 python-dotenv==1.0.1
 
-# LangChain stack (compatible pins)
+# LangChain stack (aligned versions)
 langchain-groq==0.3.1
-langchain-core==0.2.20
-langchain-community==0.2.20
-langchain-chroma==0.2.2
+langchain-core==0.3.48
+langchain-community==0.3.48
+langchain-chroma==0.3.4
 
 chromadb==0.4.24
 numpy==1.26.4
@@ -19,4 +19,4 @@ transformers==4.39.3
 tokenizers==0.15.2
 accelerate==0.28.0
 sentence-transformers==2.7.0
-langchain-huggingface==0.2.7
+langchain-huggingface==0.3.48
